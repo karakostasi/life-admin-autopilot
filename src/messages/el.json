@@ -97,7 +97,10 @@
       "Συνδρομές"
     ],
     "waitlistTitle": "Μπες πρώτος όταν ανοίξουμε",
-    "footer": "Life Admin Autopilot"
+    "footer": "Life Admin Autopilot",
+    "yourDocs": "Τα πιο επείγοντα έγγραφά σου",
+    "seeAll": "Δες όλα",
+    "addFirst": "Πρόσθεσε το πρώτο σου έγγραφο"
   },
   "status": {
     "expired": "Έληξε",

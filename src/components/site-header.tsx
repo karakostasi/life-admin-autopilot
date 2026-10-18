@@ -27,7 +27,7 @@ export async function SiteHeader() {
 
         {user ? (
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="hidden text-sm font-medium text-slate-700 hover:text-slate-900 sm:block">
+            <Link href="/dashboard" className="hidden rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:block">
               {el.header.dashboard}
             </Link>
             <UserMenu initials={initials(user.user_metadata?.full_name, user.email)} email={user.email ?? ""} />
