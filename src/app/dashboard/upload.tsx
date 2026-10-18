@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState, useTransition } from "react";
 import el from "@/messages/el.json";
+import { findByPlate, isVehicleType, suggestSameVehicle, vehicleKindForType, type Vehicle } from "@/lib/vehicles";
 import {
   discardUpload,
   extractUpload,
@@ -30,7 +31,7 @@ async function prepare(file: File): Promise<File> {
   }
 }
 
-export function Upload() {
+export function Upload({ vehicles }: { vehicles: Vehicle[] }) {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -73,12 +74,12 @@ export function Upload() {
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={onPick} className="hidden" />
       </div>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      {result && <ReviewForm result={result} onClose={close} />}
+      {result && <ReviewForm result={result} vehicles={vehicles} onClose={close} />}
     </section>
   );
 }
 
-function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (discard: boolean) => void }) {
+function ReviewForm({ result, vehicles, onClose }: { result: UploadResult; vehicles: Vehicle[]; onClose: (discard: boolean) => void }) {
   const [state, action, saving] = useActionState<SaveState, FormData>(async (prev, fd) => {
     const res = await saveDocument(prev, fd);
     if (res.status === "ok") onClose(false);
@@ -86,6 +87,18 @@ function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (disca
   }, { status: "idle" });
 
   const x = result.ok ? result.extraction : null;
+
+  // ελεγχόμενα πεδία: από αυτά εξαρτάται η επιλογή οχήματος
+  const [type, setType] = useState<string>(x?.type ?? "other");
+  const [identifier, setIdentifier] = useState(x?.identifier ?? "");
+  const [model, setModel] = useState(x?.vehicle_model ?? "");
+  const [choice, setChoice] = useState<string | null>(null); // null = αυτόματη επιλογή
+
+  const isVehicle = isVehicleType(type);
+  const matched = findByPlate(vehicles, identifier);
+  const suggestion = suggestSameVehicle(vehicles, identifier, model);
+  const vehicleChoice = !isVehicle ? "" : (choice ?? matched?.id ?? (identifier.trim() ? "new" : ""));
+  const vehicleName = (v: Vehicle) => (v.model ? `${v.plate} · ${v.model}` : v.plate);
   const lowDate = !x || !x.expires_on || x.confidence.expires_on < 0.8;
   const lowType = !!x && x.confidence.type < 0.6;
   const lowAmount = !!x && x.amount !== null && x.confidence.amount < 0.6;
@@ -115,7 +128,7 @@ function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (disca
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {el.upload.fields.type}
-          <select name="type" defaultValue={x?.type ?? "other"} className={`${field} ${lowType ? flagged : ""}`}>
+          <select name="type" value={type} onChange={(e) => setType(e.target.value)} className={`${field} ${lowType ? flagged : ""}`}>
             {Object.entries(el.types).map(([v, label]) => (
               <option key={v} value={v}>
                 {label}
@@ -133,7 +146,7 @@ function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (disca
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {el.upload.fields.identifier}
-          <input name="identifier" maxLength={60} defaultValue={x?.identifier ?? ""} className={field} />
+          <input name="identifier" maxLength={60} value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={field} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {el.upload.fields.amount}
@@ -149,6 +162,50 @@ function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (disca
             ))}
           </select>
         </label>
+
+        {isVehicle && (
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/70 p-4 sm:col-span-2">
+            <label className="flex flex-col gap-1 text-sm">
+              {el.upload.vehicle.label}
+              <select name="vehicle_choice" value={vehicleChoice} onChange={(e) => setChoice(e.target.value)} className={field}>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {vehicleName(v)}
+                  </option>
+                ))}
+                <option value="new">{el.upload.vehicle.new}</option>
+                <option value="">{el.upload.vehicle.none}</option>
+              </select>
+            </label>
+
+            {matched && vehicleChoice === matched.id && <p className="text-sm text-emerald-700">{el.upload.vehicle.matched}</p>}
+
+            {suggestion && vehicleChoice === "new" && (
+              <p className="flex flex-wrap items-center gap-3 rounded-lg bg-orange-50 px-3 py-2 text-sm text-orange-800">
+                {el.upload.vehicle.suggest.replace("{name}", vehicleName(suggestion))}
+                <button type="button" onClick={() => setChoice(suggestion.id)} className="btn-secondary !px-3 !py-1 !text-xs">
+                  {el.upload.vehicle.suggestYes}
+                </button>
+              </p>
+            )}
+
+            {vehicleChoice === "new" && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-sm">
+                  {el.upload.vehicle.model}
+                  <input name="vehicle_model" maxLength={80} value={model} onChange={(e) => setModel(e.target.value)} className={field} />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  {el.upload.vehicle.kind}
+                  <select name="vehicle_kind" defaultValue={vehicleKindForType(type)} key={vehicleKindForType(type)} className={field}>
+                    <option value="car">{el.upload.vehicle.car}</option>
+                    <option value="motorcycle">{el.upload.vehicle.motorcycle}</option>
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {state.status === "error" && <p className="text-sm text-red-600">{state.message}</p>}

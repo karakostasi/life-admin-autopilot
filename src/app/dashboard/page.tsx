@@ -5,7 +5,7 @@ import { DocTitle, Plate } from "@/components/doc-title";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
 import { typeIcon } from "@/lib/doc-types";
 import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
-import { groupByPlate, stripPlate } from "@/lib/vehicles";
+import { groupByVehicle, stripPlate, type Vehicle } from "@/lib/vehicles";
 import { createClient } from "@/lib/supabase/server";
 import { AddDocument } from "./add-document";
 import { Upload } from "./upload";
@@ -22,9 +22,12 @@ export default async function Dashboard() {
 
   const { data: docs } = await supabase
     .from("documents")
-    .select("id,type,title,provider,identifier,expires_on,file_path")
+    .select("id,type,title,provider,identifier,vehicle_id,expires_on,file_path")
     .neq("status", "archived")
     .order("expires_on", { ascending: true, nullsFirst: false });
+  const { data: vehicleRows } = await supabase.from("vehicles").select("id,kind,plate,model").order("created_at");
+  const vehicles = (vehicleRows ?? []) as Vehicle[];
+  const vehicleById = new Map(vehicles.map((v) => [v.id, v]));
 
   // signed URLs (5 λεπτά): το bucket είναι private
   const paths = (docs ?? []).map((d) => d.file_path).filter((p): p is string => !!p);
@@ -38,8 +41,8 @@ export default async function Dashboard() {
   const counts = { expired: 0, soon: 0, ok: 0, unknown: 0 } as Record<ExpiryStatus, number>;
   for (const i of items) counts[i.status]++;
 
-  // έγγραφα με την ίδια πινακίδα -> μία κάρτα οχήματος. Μπαίνει στην ενότητα του πιο επείγοντος εγγράφου της
-  const entries = groupByPlate(items).map((g) => {
+  // έγγραφα του ίδιου οχήματος -> μία κάρτα οχήματος. Μπαίνει στην ενότητα του πιο επείγοντος εγγράφου της
+  const entries = groupByVehicle(items).map((g) => {
     const worst = [...g.items].sort(
       (a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.days ?? Infinity) - (b.days ?? Infinity),
     )[0];
@@ -65,7 +68,7 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      <Upload />
+      <Upload vehicles={vehicles} />
 
       <AddDocument />
 
@@ -84,15 +87,17 @@ export default async function Dashboard() {
             </h2>
             <ul className="flex flex-col gap-3">
               {group.map((e) =>
-                e.plate ? (
-                  <li key={e.plate} className="card overflow-hidden transition hover:shadow-md">
+                e.vehicleId ? (
+                  <li key={e.vehicleId} className="card overflow-hidden transition hover:shadow-md">
                     <div className="flex flex-wrap items-center gap-4 p-4">
                       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${STATUS_STYLES[status].soft}`}>
-                        {vehicleIcon(e.items.map((d) => d.type))}
+                        {vehicleIcon(vehicleById.get(e.vehicleId), e.items.map((d) => d.type))}
                       </span>
                       <div className="min-w-0 flex-1 basis-48">
-                        <Plate large>{e.plate}</Plate>
-                        <p className="mt-1 text-sm text-slate-500">{el.dashboard.documentsCount.replace("{n}", String(e.items.length))}</p>
+                        <Plate large>{vehicleById.get(e.vehicleId)?.plate ?? e.items[0].identifier}</Plate>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {[vehicleById.get(e.vehicleId)?.model, el.dashboard.documentsCount.replace("{n}", String(e.items.length))].filter(Boolean).join(" · ")}
+                        </p>
                       </div>
                       <ExpiryBadge status={status} days={e.days} />
                     </div>
@@ -101,7 +106,7 @@ export default async function Dashboard() {
                         <li key={d.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                           <span className="w-6 shrink-0 text-center text-lg">{typeIcon(d.type)}</span>
                           <div className="min-w-0 flex-1 basis-40">
-                            <p className="truncate text-sm font-semibold">{stripPlate(d.title, d.identifier)}</p>
+                            <p className="truncate text-sm font-semibold">{stripPlate(d.title, vehicleById.get(e.vehicleId!)?.plate ?? d.identifier)}</p>
                             <p className="text-xs text-slate-500">
                               {el.types[d.type as keyof typeof el.types]}
                               {d.expires_on && ` · ${formatDate(d.expires_on)}`}
@@ -138,8 +143,9 @@ export default async function Dashboard() {
   );
 }
 
-// Εικονίδιο οχήματος για την ομάδα: μηχανή αν υπάρχει ασφάλεια μηχανής, αλλιώς αυτοκίνητο
-function vehicleIcon(types: string[]): string {
+// Εικονίδιο οχήματος για την ομάδα: από το είδος του οχήματος, αλλιώς από τα έγγραφά του
+function vehicleIcon(vehicle: Vehicle | undefined, types: string[]): string {
+  if (vehicle) return typeIcon(vehicle.kind === "motorcycle" ? "motorcycle_insurance" : "car_insurance");
   if (types.includes("motorcycle_insurance")) return typeIcon("motorcycle_insurance");
   if (types.some((t) => ["car_insurance", "ktel_ktheo", "road_tax"].includes(t))) return typeIcon("car_insurance");
   return typeIcon(types[0]);

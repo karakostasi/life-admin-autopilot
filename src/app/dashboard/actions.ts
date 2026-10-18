@@ -45,8 +45,13 @@ export async function deleteDocument(formData: FormData) {
   const id = z.uuid().safeParse(formData.get("id"));
   if (!id.success) return;
   const supabase = await createClient();
-  const { data: doc } = await supabase.from("documents").select("file_path").eq("id", id.data).maybeSingle();
+  const { data: doc } = await supabase.from("documents").select("file_path,vehicle_id").eq("id", id.data).maybeSingle();
   await supabase.from("documents").delete().eq("id", id.data); // το RLS επιτρέπει μόνο δικά του
   if (doc?.file_path) await supabase.storage.from("documents").remove([doc.file_path]);
+  // όχημα χωρίς άλλα έγγραφα: σβήνεται κι αυτό
+  if (doc?.vehicle_id) {
+    const { count } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("vehicle_id", doc.vehicle_id);
+    if (count === 0) await supabase.from("vehicles").delete().eq("id", doc.vehicle_id);
+  }
   revalidatePath("/dashboard");
 }

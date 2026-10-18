@@ -32,23 +32,48 @@ export function stripPlate(title: string, identifier: string | null | undefined)
   return stripped || title;
 }
 
-// Μόνο ο ίδιος identifier σε 2+ έγγραφα σχηματίζει ομάδα· τα υπόλοιπα μένουν μόνα τους
-export function groupByPlate<T extends { identifier: string | null }>(items: T[]): { plate: string | null; items: T[] }[] {
-  const byKey = new Map<string, T[]>();
-  for (const i of items) {
-    const key = plateKey(i.identifier);
-    if (key) byKey.set(key, [...(byKey.get(key) ?? []), i]);
-  }
+// Τύποι εγγράφων που ανήκουν σε όχημα (τα υπόλοιπα, π.χ. διαβατήριο, δεν συνδέονται με όχημα)
+export const VEHICLE_TYPES = ["car_insurance", "motorcycle_insurance", "ktel_ktheo", "road_tax"] as const;
+export const isVehicleType = (type: string) => (VEHICLE_TYPES as readonly string[]).includes(type);
+
+export type Vehicle = { id: string; kind: "car" | "motorcycle"; plate: string; model: string | null };
+
+export const vehicleKindForType = (type: string): Vehicle["kind"] => (type === "motorcycle_insurance" ? "motorcycle" : "car");
+
+// "Yamaha Tracer 700" = "YAMAHA  tracer-700"
+export function modelKey(model: string | null | undefined): string | null {
+  const key = (model ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+  return key || null;
+}
+
+// Υπάρχον όχημα για την πινακίδα που διαβάστηκε
+export function findByPlate(vehicles: Vehicle[], plate: string | null | undefined): Vehicle | undefined {
+  const key = plateKey(plate);
+  return key ? vehicles.find((v) => plateKey(v.plate) === key) : undefined;
+}
+
+// Άλλη πινακίδα αλλά ίδιο μοντέλο: πιθανόν το ίδιο όχημα (π.χ. λάθος ανάγνωση). Μόνο πρόταση, ποτέ αυτόματη ένωση.
+export function suggestSameVehicle(vehicles: Vehicle[], plate: string | null | undefined, model: string | null | undefined): Vehicle | undefined {
+  const m = modelKey(model);
+  if (!m || findByPlate(vehicles, plate)) return undefined;
+  const matches = vehicles.filter((v) => modelKey(v.model) === m);
+  return matches.length === 1 ? matches[0] : undefined; // αν είναι αμφίσημο (2 ίδια μοντέλα) δεν προτείνουμε τίποτα
+}
+
+// Ομαδοποίηση εγγράφων ανά όχημα: κάθε ομάδα με 2+ έγγραφα ενός οχήματος γίνεται μία κάρτα, τα υπόλοιπα μένουν μόνα
+export function groupByVehicle<T extends { vehicle_id: string | null }>(items: T[]): { vehicleId: string | null; items: T[] }[] {
+  const byVehicle = new Map<string, T[]>();
+  for (const i of items) if (i.vehicle_id) byVehicle.set(i.vehicle_id, [...(byVehicle.get(i.vehicle_id) ?? []), i]);
+
   const seen = new Set<string>();
-  const out: { plate: string | null; items: T[] }[] = [];
+  const out: { vehicleId: string | null; items: T[] }[] = [];
   for (const i of items) {
-    const key = plateKey(i.identifier);
-    const members = key ? byKey.get(key)! : [i];
-    if (key && members.length > 1) {
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({ plate: i.identifier!.trim(), items: members });
-    } else out.push({ plate: null, items: [i] });
+    const members = i.vehicle_id ? byVehicle.get(i.vehicle_id)! : [i];
+    if (i.vehicle_id && members.length > 1) {
+      if (seen.has(i.vehicle_id)) continue;
+      seen.add(i.vehicle_id);
+      out.push({ vehicleId: i.vehicle_id, items: members });
+    } else out.push({ vehicleId: null, items: [i] });
   }
   return out;
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import el from "@/messages/el.json";
 import { extractDocument, type Extraction, type ExtractInput } from "@/lib/extract";
 import { createClient } from "@/lib/supabase/server";
+import { isVehicleType, plateKey, vehicleKindForType } from "@/lib/vehicles";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 const BUCKET = "documents";
@@ -80,9 +81,46 @@ const saveSchema = z.object({
   recurrence: z.enum(["none", "monthly", "yearly"]),
   file_path: z.string().nullable(),
   extraction: z.string().max(6000).nullable(),
+  // όχημα: "" (κανένα) | "new" | id υπάρχοντος οχήματος
+  vehicle_choice: z.string().max(40),
+  vehicle_model: z.string().trim().max(80).nullable(),
+  vehicle_kind: z.enum(["car", "motorcycle"]).nullable(),
 });
 
 const text = (v: FormDataEntryValue | null) => String(v ?? "").trim() || null;
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+// Βρίσκει ή δημιουργεί το όχημα στο οποίο ανήκει το έγγραφο. Το RLS εγγυάται ότι βλέπουμε μόνο δικά του.
+async function resolveVehicle(
+  supabase: Supabase,
+  userId: string,
+  v: { choice: string; plate: string | null; model: string | null; kind: "car" | "motorcycle" },
+): Promise<{ id: string; plate: string } | null> {
+  if (z.uuid().safeParse(v.choice).success) {
+    const { data } = await supabase.from("vehicles").select("id,plate").eq("id", v.choice).maybeSingle();
+    return data ?? null;
+  }
+  const key = plateKey(v.plate);
+  if (v.choice !== "new" || !v.plate || !key) return null;
+
+  const find = () => supabase.from("vehicles").select("id,plate,model").eq("plate_key", key).maybeSingle();
+  let { data: vehicle } = await find();
+  if (!vehicle) {
+    const { data, error } = await supabase
+      .from("vehicles")
+      .insert({ user_id: userId, kind: v.kind, plate: v.plate, plate_key: key, model: v.model })
+      .select("id,plate,model")
+      .single();
+    if (error) {
+      if (error.code !== "23505") console.error("create vehicle failed:", error.code);
+      vehicle = (await find()).data; // ταυτόχρονη δημιουργία: πάρε αυτό που υπάρχει ήδη
+    } else vehicle = data;
+  } else if (!vehicle.model && v.model) {
+    await supabase.from("vehicles").update({ model: v.model }).eq("id", vehicle.id);
+  }
+  return vehicle ? { id: vehicle.id, plate: vehicle.plate } : null;
+}
 
 // Βήμα 2: ο χρήστης επιβεβαίωσε/διόρθωσε τα πεδία -> αποθήκευση
 export async function saveDocument(_prev: SaveState, formData: FormData): Promise<SaveState> {
@@ -101,10 +139,13 @@ export async function saveDocument(_prev: SaveState, formData: FormData): Promis
     recurrence: formData.get("recurrence"),
     file_path: text(formData.get("file_path")),
     extraction: text(formData.get("extraction")),
+    vehicle_choice: String(formData.get("vehicle_choice") ?? ""),
+    vehicle_model: text(formData.get("vehicle_model")),
+    vehicle_kind: (text(formData.get("vehicle_kind")) as "car" | "motorcycle" | null) ?? null,
   });
   if (!parsed.success) return { status: "error", message: el.dashboard.error };
 
-  const { extraction, file_path, ...rest } = parsed.data;
+  const { extraction, file_path, vehicle_choice, vehicle_model, vehicle_kind, ...rest } = parsed.data;
   if (file_path && !file_path.startsWith(`${user.id}/`)) return { status: "error", message: el.dashboard.error };
 
   let extractionJson: unknown = null;
@@ -114,9 +155,24 @@ export async function saveDocument(_prev: SaveState, formData: FormData): Promis
     extractionJson = null;
   }
 
+  let vehicleId: string | null = null;
+  if (isVehicleType(rest.type)) {
+    const vehicle = await resolveVehicle(supabase, user.id, {
+      choice: vehicle_choice,
+      plate: rest.identifier,
+      model: vehicle_model,
+      kind: vehicle_kind ?? vehicleKindForType(rest.type),
+    });
+    if (vehicle) {
+      vehicleId = vehicle.id;
+      rest.identifier = vehicle.plate; // η πινακίδα του εγγράφου ευθυγραμμίζεται με του οχήματος
+    }
+  }
+
   const { error } = await supabase.from("documents").insert({
     user_id: user.id,
     ...rest,
+    vehicle_id: vehicleId,
     file_path,
     extraction: extractionJson,
     source: "upload",

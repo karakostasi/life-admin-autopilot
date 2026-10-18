@@ -22,6 +22,18 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- ---------- Vehicles ----------
+create table public.vehicles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null default 'car' check (kind in ('car','motorcycle')),
+  plate text not null,
+  plate_key text not null,
+  model text,
+  created_at timestamptz not null default now(),
+  unique (user_id, plate_key)
+);
+
 -- ---------- Documents (λήξεις) ----------
 create table public.documents (
   id uuid primary key default gen_random_uuid(),
@@ -30,6 +42,7 @@ create table public.documents (
   title text not null,
   provider text,
   identifier text,                 -- π.χ. πινακίδα οχήματος
+  vehicle_id uuid references public.vehicles(id) on delete set null,
   expires_on date,
   amount numeric(10,2),
   currency text not null default 'EUR',
@@ -99,6 +112,7 @@ create table public.events (
 -- ---------- Row Level Security ----------
 alter table public.profiles       enable row level security;
 alter table public.documents      enable row level security;
+alter table public.vehicles       enable row level security;
 alter table public.reminders      enable row level security;
 alter table public.subscriptions  enable row level security;
 alter table public.leads          enable row level security;
@@ -106,6 +120,9 @@ alter table public.events         enable row level security;
 
 create policy "own profile"       on public.profiles
   for all using (id = auth.uid()) with check (id = auth.uid());
+
+create policy "own vehicles"      on public.vehicles
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy "own documents"     on public.documents
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
