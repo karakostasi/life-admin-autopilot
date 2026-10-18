@@ -11,6 +11,17 @@
   body {
     @apply bg-slate-100 text-slate-900;
   }
+  /* Tailwind v4: τα κουμπιά έχουν προεπιλεγμένο cursor βέλους */
+  button:not(:disabled),
+  select,
+  summary,
+  input[type="checkbox"],
+  [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {
