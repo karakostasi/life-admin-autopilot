@@ -9,7 +9,7 @@ import { groupByVehicle, stripPlate, type Vehicle } from "@/lib/vehicles";
 import { createClient } from "@/lib/supabase/server";
 import { AddDocument } from "./add-document";
 import { Upload } from "./upload";
-import { deleteDocument } from "./actions";
+import { deleteDocument, setVehicleKind } from "./actions";
 
 const ORDER: ExpiryStatus[] = ["expired", "soon", "ok", "unknown"];
 
@@ -99,7 +99,18 @@ export default async function Dashboard() {
                           {[vehicleById.get(e.vehicleId)?.model, el.dashboard.documentsCount.replace("{n}", String(e.items.length))].filter(Boolean).join(" · ")}
                         </p>
                       </div>
-                      <ExpiryBadge status={status} days={e.days} />
+                      <div className="flex flex-col items-end gap-1">
+                        <ExpiryBadge status={status} days={e.days} />
+                        {!e.items.some((d) => d.type === "motorcycle_insurance") && (
+                        <form action={setVehicleKind}>
+                          <input type="hidden" name="id" value={e.vehicleId} />
+                          <input type="hidden" name="kind" value={vehicleById.get(e.vehicleId)?.kind === "motorcycle" ? "car" : "motorcycle"} />
+                          <button className="text-xs text-slate-400 transition hover:text-indigo-600">
+                            {vehicleById.get(e.vehicleId)?.kind === "motorcycle" ? el.dashboard.vehicleToCar : el.dashboard.vehicleToMotorcycle}
+                          </button>
+                        </form>
+                        )}
+                      </div>
                     </div>
                     <ul className="divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60">
                       {e.items.map((d) => (
@@ -143,10 +154,10 @@ export default async function Dashboard() {
   );
 }
 
-// Εικονίδιο οχήματος για την ομάδα: από το είδος του οχήματος, αλλιώς από τα έγγραφά του
+// Εικονίδιο οχήματος για την ομάδα: μηχανή αν υπάρχει ασφάλεια μηχανής ή το όχημα έχει δηλωθεί μηχανή
 function vehicleIcon(vehicle: Vehicle | undefined, types: string[]): string {
-  if (vehicle) return typeIcon(vehicle.kind === "motorcycle" ? "motorcycle_insurance" : "car_insurance");
-  if (types.includes("motorcycle_insurance")) return typeIcon("motorcycle_insurance");
+  if (types.includes("motorcycle_insurance") || vehicle?.kind === "motorcycle") return typeIcon("motorcycle_insurance");
+  if (vehicle) return typeIcon("car_insurance");
   if (types.some((t) => ["car_insurance", "ktel_ktheo", "road_tax"].includes(t))) return typeIcon("car_insurance");
   return typeIcon(types[0]);
 }

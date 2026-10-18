@@ -55,3 +55,13 @@ export async function deleteDocument(formData: FormData) {
   }
   revalidatePath("/dashboard");
 }
+
+// Αλλαγή είδους οχήματος (αυτοκίνητο <-> μηχανή): καθορίζει το εικονίδιο της κάρτας
+export async function setVehicleKind(formData: FormData) {
+  const id = z.uuid().safeParse(formData.get("id"));
+  const kind = z.enum(["car", "motorcycle"]).safeParse(formData.get("kind"));
+  if (!id.success || !kind.success) return;
+  const supabase = await createClient();
+  await supabase.from("vehicles").update({ kind: kind.data }).eq("id", id.data); // το RLS επιτρέπει μόνο δικά του
+  revalidatePath("/dashboard");
+}
