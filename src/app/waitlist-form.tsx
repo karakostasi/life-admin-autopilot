@@ -22,7 +22,7 @@ export function WaitlistForm() {
           name="email"
           required
           autoComplete="email"
-          className="rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          className="input"
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -33,14 +33,14 @@ export function WaitlistForm() {
           name="answer"
           rows={2}
           maxLength={500}
-          className="rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          className="input"
         />
       </label>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+        className="btn-primary py-3"
       >
         {pending ? el.form.sending : el.form.cta}
       </button>

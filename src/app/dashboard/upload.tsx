@@ -10,7 +10,7 @@ import {
   type UploadResult,
 } from "./upload-actions";
 
-const field = "rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900";
+const field = "input";
 const flagged = "border-orange-400 bg-orange-50";
 
 // Μικραίνει τις φωτογραφίες (κινητό: 5-10MB) πριν ανέβουν. Τα PDF περνάνε ως έχουν.
@@ -56,7 +56,7 @@ export function Upload() {
   }
 
   return (
-    <section className="rounded-2xl border border-dashed border-indigo-300 bg-indigo-50/50 p-5">
+    <section className="rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/60 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-semibold">{el.upload.title}</h2>
@@ -66,7 +66,7 @@ export function Upload() {
           type="button"
           disabled={pending || result !== null}
           onClick={() => inputRef.current?.click()}
-          className="rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="btn-primary"
         >
           {pending ? el.upload.reading : el.upload.choose}
         </button>
@@ -153,10 +153,10 @@ function ReviewForm({ result, onClose }: { result: UploadResult; onClose: (disca
 
       {state.status === "error" && <p className="text-sm text-red-600">{state.message}</p>}
       <div className="flex gap-3">
-        <button disabled={saving} className="rounded-lg bg-slate-900 px-5 py-2.5 font-medium text-white hover:bg-slate-700 disabled:opacity-60">
+        <button disabled={saving} className="btn-dark">
           {saving ? el.upload.saving : el.upload.confirm}
         </button>
-        <button type="button" onClick={() => onClose(true)} className="rounded-lg border border-slate-300 px-5 py-2.5 hover:bg-white">
+        <button type="button" onClick={() => onClose(true)} className="btn-secondary">
           {el.upload.cancel}
         </button>
       </div>

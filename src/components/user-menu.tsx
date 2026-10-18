@@ -34,12 +34,12 @@ export function UserMenu({ initials, email }: { initials: string; email: string 
         aria-label={email}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm ring-2 ring-white transition hover:ring-indigo-200"
       >
         {initials}
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+        <div role="menu" className="absolute right-0 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
           <p className="truncate px-3 py-2 text-sm text-slate-500">{email}</p>
           <Link href="/dashboard" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50">
             {el.header.dashboard}

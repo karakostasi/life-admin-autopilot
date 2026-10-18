@@ -1,11 +1,14 @@
 import Link from "next/link";
 import el from "@/messages/el.json";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
+import { typeIcon } from "@/lib/doc-types";
 import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
 import { createClient } from "@/lib/supabase/server";
 import { WaitlistForm } from "./waitlist-form";
 
 const ICONS = ["📸", "🔔", "💸"];
+
+type Urgent = { id: string; title: string; type: string; expires_on: string | null; status: ExpiryStatus; days: number | null };
 
 export default async function Home() {
   const supabase = await createClient();
@@ -14,7 +17,7 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   // Συνδεδεμένος: τα πιο επείγοντα έγγραφά του (ληγμένα, μετά πορτοκαλί, μετά τα υπόλοιπα)
-  let urgent: { id: string; title: string; type: string; expires_on: string | null; status: ExpiryStatus; days: number | null }[] = [];
+  let urgent: Urgent[] = [];
   if (user) {
     const { data: docs } = await supabase
       .from("documents")
@@ -30,32 +33,38 @@ export default async function Home() {
 
   return (
     <main>
-      <section className="bg-gradient-to-b from-indigo-50 to-white">
-        <div className="mx-auto grid max-w-5xl gap-12 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
-          <div className="flex flex-col gap-6">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{el.hero.title}</h1>
-            <p className="text-lg text-slate-600">{el.hero.subtitle}</p>
-            <div className="flex flex-wrap gap-3">
-              {!user && (
-                <>
-                  <a href="#waitlist" className="rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-500">
-                    {el.hero.cta}
-                  </a>
-                  <Link href="/login" className="rounded-lg border border-slate-300 bg-white px-6 py-3 font-medium hover:bg-slate-50">
-                    {el.hero.login}
-                  </Link>
-                </>
-              )}
-            </div>
+      <section className="relative overflow-hidden bg-gradient-to-b from-indigo-100/70 via-slate-100 to-slate-100">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-indigo-200/60 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -left-32 top-40 h-80 w-80 rounded-full bg-orange-100/70 blur-3xl" />
+
+        <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-16 md:grid-cols-2 md:items-center md:py-28">
+          <div className="flex flex-col items-start gap-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-3 py-1 text-xs font-medium text-indigo-700 shadow-sm">
+              🇬🇷 {el.landing.badge}
+            </span>
+            <h1 className="text-balance bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-700 bg-clip-text text-4xl font-extrabold leading-tight tracking-tight text-transparent sm:text-5xl lg:text-6xl">
+              {el.hero.title}
+            </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-slate-600">{el.hero.subtitle}</p>
+            {!user && (
+              <div className="flex flex-wrap gap-3">
+                <a href="#waitlist" className="btn-primary px-6 py-3 text-base">
+                  {el.hero.cta}
+                </a>
+                <Link href="/login" className="btn-secondary px-6 py-3 text-base">
+                  {el.hero.login}
+                </Link>
+              </div>
+            )}
           </div>
 
           {user ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-              <p className="mb-4 text-sm font-medium text-slate-500">{el.landing.yourDocs}</p>
+            <div className="card p-6 shadow-xl shadow-slate-200/60">
+              <p className="mb-4 text-sm font-semibold text-slate-500">{el.landing.yourDocs}</p>
               {urgent.length === 0 ? (
-                <div className="flex flex-col items-start gap-3">
+                <div className="flex flex-col items-start gap-4 py-2">
                   <p className="text-slate-600">{el.dashboard.empty}</p>
-                  <Link href="/dashboard" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                  <Link href="/dashboard" className="btn-primary">
                     {el.landing.addFirst}
                   </Link>
                 </div>
@@ -63,9 +72,12 @@ export default async function Home() {
                 <>
                   <ul className="flex flex-col gap-3">
                     {urgent.map((d) => (
-                      <li key={d.id} className={`flex items-center justify-between gap-3 rounded-lg border border-slate-200 border-l-4 p-3 ${STATUS_STYLES[d.status].border}`}>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{d.title}</p>
+                      <li key={d.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl ${STATUS_STYLES[d.status].soft}`}>
+                          {typeIcon(d.type)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold">{d.title}</p>
                           <p className="text-xs text-slate-500">
                             {el.types[d.type as keyof typeof el.types]}
                             {d.expires_on && ` · ${formatDate(d.expires_on)}`}
@@ -75,22 +87,28 @@ export default async function Home() {
                       </li>
                     ))}
                   </ul>
-                  <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline">
+                  <Link href="/dashboard" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:underline">
                     {el.landing.seeAll} →
                   </Link>
                 </>
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-              <p className="mb-4 text-sm font-medium text-slate-500">{el.landing.previewTitle}</p>
+            <div className="card p-6 shadow-xl shadow-slate-200/60 md:rotate-1">
+              <div className="mb-4 flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                <p className="ml-3 text-sm font-semibold text-slate-500">{el.landing.previewTitle}</p>
+              </div>
               <ul className="flex flex-col gap-3">
                 {el.landing.previewItems.map((item) => {
-                  const s = STATUS_STYLES[item.status as ExpiryStatus];
+                  const st = STATUS_STYLES[item.status as ExpiryStatus];
                   return (
-                    <li key={item.title} className={`flex items-center justify-between gap-3 rounded-lg border border-slate-200 border-l-4 p-3 ${s.border}`}>
-                      <span className="font-medium">{item.title}</span>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.badge}`}>{item.label}</span>
+                    <li key={item.title} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl ${st.soft}`}>{item.icon}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold">{item.title}</span>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${st.badge}`}>{item.label}</span>
                     </li>
                   );
                 })}
@@ -102,40 +120,40 @@ export default async function Home() {
 
       {!user && (
         <>
-          <section className="mx-auto max-w-5xl px-6 py-12">
+          <section className="mx-auto max-w-6xl px-6 py-12">
             <div className="grid gap-6 md:grid-cols-3">
               {el.points.map((p, i) => (
-                <div key={p} className="rounded-2xl border border-slate-200 p-6">
-                  <div className="mb-3 text-3xl">{ICONS[i]}</div>
-                  <h3 className="mb-1 font-semibold">{el.landing.pointTitles[i]}</h3>
-                  <p className="text-slate-600">{p}</p>
+                <div key={p} className="card p-7 transition hover:-translate-y-1 hover:shadow-md">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-2xl">{ICONS[i]}</div>
+                  <h3 className="mb-1.5 text-lg font-bold">{el.landing.pointTitles[i]}</h3>
+                  <p className="leading-relaxed text-slate-600">{p}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="mx-auto max-w-5xl px-6 py-8 text-center">
-            <p className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-500">{el.landing.typesTitle}</p>
-            <div className="flex flex-wrap justify-center gap-2">
+          <section className="mx-auto max-w-4xl px-6 py-10 text-center">
+            <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-500">{el.landing.typesTitle}</p>
+            <div className="flex flex-wrap justify-center gap-2.5">
               {el.landing.types.map((t) => (
-                <span key={t} className="rounded-full bg-slate-100 px-4 py-1.5 text-sm text-slate-700">
+                <span key={t} className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm">
                   {t}
                 </span>
               ))}
             </div>
           </section>
+
+          <section id="waitlist" className="mx-auto max-w-xl scroll-mt-20 px-6 py-16">
+            <div className="card p-8 shadow-xl shadow-slate-200/60">
+              <h2 className="mb-6 text-center text-2xl font-bold tracking-tight">{el.landing.waitlistTitle}</h2>
+              <WaitlistForm />
+              <p className="mt-6 text-center text-sm text-slate-500">🔒 {el.trust}</p>
+            </div>
+          </section>
         </>
       )}
 
-      {!user && (
-        <section id="waitlist" className="mx-auto max-w-xl px-6 py-16">
-          <h2 className="mb-6 text-center text-2xl font-bold tracking-tight">{el.landing.waitlistTitle}</h2>
-          <WaitlistForm />
-          <p className="mt-6 text-center text-sm text-slate-500">{el.trust}</p>
-        </section>
-      )}
-
-      <footer className="border-t border-slate-200 py-6 text-center text-sm text-slate-500">{el.landing.footer}</footer>
+      <footer className="border-t border-slate-200 bg-slate-200/50 py-8 text-center text-sm text-slate-500">{el.landing.footer}</footer>
     </main>
   );
 }

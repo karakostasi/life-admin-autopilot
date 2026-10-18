@@ -18,22 +18,22 @@ export async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-100/85 shadow-sm shadow-slate-300/30 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-sm text-white">✓</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">✓</span>
           Life Admin Autopilot
         </Link>
 
         {user ? (
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="hidden rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:block">
+            <Link href="/dashboard" className="btn-secondary hidden !px-4 !py-2 sm:inline-flex">
               {el.header.dashboard}
             </Link>
             <UserMenu initials={initials(user.user_metadata?.full_name, user.email)} email={user.email ?? ""} />
           </div>
         ) : (
-          <Link href="/login" className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-700">
+          <Link href="/login" className="btn-dark !px-4 !py-2">
             {el.header.login}
           </Link>
         )}

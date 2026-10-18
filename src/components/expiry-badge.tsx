@@ -1,11 +1,11 @@
 import el from "@/messages/el.json";
 import type { ExpiryStatus } from "@/lib/expiry";
 
-export const STATUS_STYLES: Record<ExpiryStatus, { badge: string; border: string; dot: string }> = {
-  expired: { badge: "bg-red-100 text-red-800", border: "border-l-red-500", dot: "bg-red-500" },
-  soon: { badge: "bg-orange-100 text-orange-800", border: "border-l-orange-500", dot: "bg-orange-500" },
-  ok: { badge: "bg-emerald-100 text-emerald-800", border: "border-l-emerald-500", dot: "bg-emerald-500" },
-  unknown: { badge: "bg-slate-100 text-slate-700", border: "border-l-slate-300", dot: "bg-slate-300" },
+export const STATUS_STYLES: Record<ExpiryStatus, { badge: string; border: string; dot: string; soft: string; text: string; tile: string }> = {
+  expired: { badge: "bg-red-100 text-red-800", border: "border-l-red-500", dot: "bg-red-500", soft: "bg-red-50", text: "text-red-700", tile: "bg-red-100 border-red-300 shadow-red-200/60" },
+  soon: { badge: "bg-orange-100 text-orange-800", border: "border-l-orange-500", dot: "bg-orange-500", soft: "bg-orange-50", text: "text-orange-700", tile: "bg-orange-100 border-orange-300 shadow-orange-200/60" },
+  ok: { badge: "bg-emerald-100 text-emerald-800", border: "border-l-emerald-500", dot: "bg-emerald-500", soft: "bg-emerald-50", text: "text-emerald-700", tile: "bg-emerald-100 border-emerald-300 shadow-emerald-200/60" },
+  unknown: { badge: "bg-slate-100 text-slate-700", border: "border-l-slate-300", dot: "bg-slate-300", soft: "bg-slate-100", text: "text-slate-600", tile: "bg-slate-200 border-slate-300 shadow-slate-200/60" },
 };
 
 const plural = (n: number) => `${n} ${n === 1 ? el.status.day : el.status.days}`;
