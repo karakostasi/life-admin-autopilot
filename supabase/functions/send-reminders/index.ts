@@ -5,6 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TYPE_LABELS: Record<string, string> = {
   car_insurance: "Ασφάλεια αυτοκινήτου",
+  motorcycle_insurance: "Ασφάλεια μηχανής",
   ktel_ktheo: "ΚΤΕΟ",
   road_tax: "Τέλη κυκλοφορίας",
   passport: "Διαβατήριο",

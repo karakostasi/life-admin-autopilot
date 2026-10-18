@@ -1,6 +1,7 @@
 // Εικονίδιο ανά τύπο εγγράφου (emoji: χωρίς εξαρτήσεις)
 export const TYPE_ICONS: Record<string, string> = {
   car_insurance: "🚗",
+  motorcycle_insurance: "🏍️",
   ktel_ktheo: "🔧",
   road_tax: "🧾",
   passport: "🛂",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import el from "@/messages/el.json";
+import { DocTitle } from "@/components/doc-title";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
 import { typeIcon } from "@/lib/doc-types";
 import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
@@ -8,7 +9,7 @@ import { WaitlistForm } from "./waitlist-form";
 
 const ICONS = ["📸", "🔔", "💸"];
 
-type Urgent = { id: string; title: string; type: string; expires_on: string | null; status: ExpiryStatus; days: number | null };
+type Urgent = { id: string; title: string; identifier: string | null; type: string; expires_on: string | null; status: ExpiryStatus; days: number | null };
 
 export default async function Home() {
   const supabase = await createClient();
@@ -21,7 +22,7 @@ export default async function Home() {
   if (user) {
     const { data: docs } = await supabase
       .from("documents")
-      .select("id,type,title,expires_on")
+      .select("id,type,title,identifier,expires_on")
       .neq("status", "archived")
       .order("expires_on", { ascending: true, nullsFirst: false });
     const rank: Record<ExpiryStatus, number> = { expired: 0, soon: 1, ok: 2, unknown: 3 };
@@ -77,7 +78,7 @@ export default async function Home() {
                           {typeIcon(d.type)}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold">{d.title}</p>
+                          <DocTitle title={d.title} identifier={d.identifier} />
                           <p className="text-xs text-slate-500">
                             {el.types[d.type as keyof typeof el.types]}
                             {d.expires_on && ` · ${formatDate(d.expires_on)}`}

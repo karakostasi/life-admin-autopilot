@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export const DOC_TYPES = [
   "car_insurance",
+  "motorcycle_insurance",
   "ktel_ktheo", // ΚΤΕΟ
   "road_tax",
   "passport",
@@ -65,7 +66,7 @@ Rules:
 2. Dates in Greek documents are dd/mm/yyyy. Convert to ISO YYYY-MM-DD. Passport MRZ lines use YYMMDD (the second line holds birth date, then expiry): use it only if the printed date is unreadable.
 3. Distinguish the issue date from the expiry date. Look for labels such as: "Ισχύει έως", "Λήξη", "Ημερομηνία λήξης", "Έως", "Διάρκεια ασφάλισης ... έως", "Date of expiry", "Valid until", "Επόμενος έλεγχος" (ΚΤΕΟ), "Next inspection".
 4. ΚΤΕΟ: the relevant date is the date of the NEXT inspection, not the date of the one performed. identifier = license plate.
-5. Insurance: expires_on is the end of the insurance period. provider = insurer name. identifier = plate for vehicles. amount = total premium, if shown. recurrence is usually "yearly" (or "monthly" if paid monthly).
+5. Insurance: expires_on is the end of the insurance period. provider = insurer name. identifier = plate for vehicles. Use "car_insurance" for cars and "motorcycle_insurance" for motorcycles, mopeds and scooters (look for words like Μοτοσυκλέτα, Μηχανή, Moto, Scooter, or a motorcycle make/model). If it is a vehicle but you cannot tell which kind, use "car_insurance" and set the type confidence below 0.6. amount = total premium, if shown. recurrence is usually "yearly" (or "monthly" if paid monthly).
 6. Road tax (τέλη κυκλοφορίας): expires_on is the payment deadline. Calendar-year obligations end on 31 December.
 7. Subscriptions or emails about renewals: use the next renewal or charge date as expires_on, and the recurring amount as amount.
 8. Warranties: expires_on is the end of the warranty. provider = brand or seller.

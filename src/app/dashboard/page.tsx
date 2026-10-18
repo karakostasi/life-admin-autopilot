@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import el from "@/messages/el.json";
+import { DocTitle } from "@/components/doc-title";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
 import { typeIcon } from "@/lib/doc-types";
 import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
@@ -77,7 +78,7 @@ export default async function Dashboard() {
                     {typeIcon(d.type)}
                   </span>
                   <div className="min-w-0 flex-1 basis-48">
-                    <p className="truncate font-semibold">{d.title}</p>
+                    <DocTitle title={d.title} identifier={d.identifier} />
                     <p className="text-sm text-slate-500">
                       {el.types[d.type as keyof typeof el.types]}
                       {d.expires_on && ` · ${formatDate(d.expires_on)}`}

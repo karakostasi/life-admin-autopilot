@@ -5,7 +5,7 @@ create extension if not exists "pgcrypto";
 
 -- ---------- Enums ----------
 create type document_type as enum (
-  'car_insurance','ktel_ktheo','road_tax','passport','id_card','driving_license',
+  'car_insurance','motorcycle_insurance','ktel_ktheo','road_tax','passport','id_card','driving_license',
   'home_insurance','health_insurance','warranty','contract','other'
 );
 

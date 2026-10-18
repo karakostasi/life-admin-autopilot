@@ -34,7 +34,7 @@
 
 `documents` (λήξεις), `reminders`, `subscriptions` (ανιχνευμένες από statement), `leads`.
 
-Τύποι εγγράφων (`documents.type`): `car_insurance`, `ktel_ktheo` (ΚΤΕΟ), `road_tax`, `passport`,
+Τύποι εγγράφων (`documents.type`): `car_insurance`, `motorcycle_insurance`, `ktel_ktheo` (ΚΤΕΟ), `road_tax`, `passport`,
 `id_card`, `driving_license`, `home_insurance`, `health_insurance`, `warranty`, `contract`, `other`.
 
 ## AI extraction

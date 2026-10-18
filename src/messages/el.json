@@ -150,6 +150,7 @@
   },
   "types": {
     "car_insurance": "Ασφάλεια αυτοκινήτου",
+    "motorcycle_insurance": "Ασφάλεια μηχανής",
     "ktel_ktheo": "ΚΤΕΟ",
     "road_tax": "Τέλη κυκλοφορίας",
     "passport": "Διαβατήριο",
