@@ -82,6 +82,16 @@ System prompt (βασικές οδηγίες): διάβασε ελληνικά �
 
 Γι' αυτό: καταγραφή events `document_added`, `reminder_opened`, `lead_clicked`.
 
+## Εκκρεμότητες (πριν το launch)
+
+- [ ] **Eval με πραγματικά δείγματα.** Το "λάθος ημερομηνία με υψηλή βεβαιότητα" έχει μετρηθεί μόνο σε 8 συνθετικά email.
+  Μάζεψε 15-20 θολωμένα δείγματα (ΚΤΕΟ, ασφαλιστήρια, διαβατήριο, ταυτότητα, τέλη κυκλοφορίας, email συνδρομής) στο `fixtures/`
+  με `.expected.json`, τρέξε `npm run eval` και ξανά με `EXTRACTION_PROVIDER=anthropic`. Στόχος: >90% σωστή ημερομηνία και 0 "confidently wrong".
+  Αν δεν βγει 0, βελτίωσε prompt και thresholds πριν προχωρήσεις.
+- [ ] **Ιδιωτικότητα AI.** Το δωρεάν Gemini μπορεί να χρησιμοποιεί τα δεδομένα για εκπαίδευση: μόνο συνθετικά/θολωμένα έγγραφα. Πριν έρθουν πραγματικοί χρήστες: paid tier ή `EXTRACTION_PROVIDER=anthropic`.
+- [ ] Region Supabase: το project είναι `eu-west-1` (Ιρλανδία), όχι Frankfurt. Αποδεκτό (ΕΕ), αλλά ενημέρωσε το Stack αν μείνει έτσι.
+- [ ] `supabase db push` κολλάει (IPv6). Οι migrations εφαρμόστηκαν χειροκίνητα από το SQL Editor: τρέξε `migration repair` όταν διορθωθεί.
+
 ## Εντολές
 
 (συμπλήρωσε μετά το setup: dev, test, lint, db migrate)

@@ -55,3 +55,6 @@ fixtures/**/*.raw.*
 # fixtures: anonymized samples stay local, only the folder is tracked
 fixtures/*
 !fixtures/.gitkeep
+
+# supabase edge function secrets (local)
+supabase/functions/.env
