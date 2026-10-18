@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import el from "@/messages/el.json";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
@@ -40,6 +41,9 @@ export default async function Dashboard() {
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">{el.dashboard.title}</h1>
         <p className="text-sm text-slate-500">{el.dashboard.signedInAs.replace("{email}", user.email ?? "")}</p>
+        <Link href="/dashboard/subscriptions" className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline">
+          {el.subscriptions.link} →
+        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4">

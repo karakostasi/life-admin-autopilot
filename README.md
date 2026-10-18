@@ -106,6 +106,7 @@ npm run dev            # http://localhost:3000
 | `npm run dev` | Server ανάπτυξης |
 | `npm run build` | Build παραγωγής |
 | `npm run start` | Εκκίνηση του build |
+| `npm test` | Tests του ανιχνευτή συνδρομών |
 | `npm run eval` | Μέτρηση ακρίβειας της εξαγωγής πάνω στα `fixtures/` |
 
 ## Δομή
@@ -116,6 +117,8 @@ src/app/dashboard/  upload, οθόνη επιβεβαίωσης, server actions
 src/components/     header, μενού χρήστη, badge κατάστασης
 src/lib/extract.ts  extractDocument (Gemini ή Anthropic)
 src/lib/expiry.ts   λογική χρωμάτων και ημερών λήξης
+src/lib/subscriptions.ts  CSV parser και ανίχνευση επαναλαμβανόμενων χρεώσεων
+src/lib/extract-transactions.ts  χρεώσεις από PDF statement (AI)
 src/lib/supabase/   clients και session proxy
 src/messages/       ελληνικά κείμενα (i18n)
 supabase/           migrations, Edge Function, config

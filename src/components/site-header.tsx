@@ -30,6 +30,9 @@ export async function SiteHeader() {
             <Link href="/dashboard" className="btn-secondary hidden !px-4 !py-2 sm:inline-flex">
               {el.header.dashboard}
             </Link>
+            <Link href="/dashboard/subscriptions" className="btn-secondary hidden !px-4 !py-2 sm:inline-flex">
+              {el.subscriptions.link}
+            </Link>
             <UserMenu initials={initials(user.user_metadata?.full_name, user.email)} email={user.email ?? ""} />
           </div>
         ) : (
