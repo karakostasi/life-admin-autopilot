@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import el from "@/messages/el.json";
-import { DocTitle } from "@/components/doc-title";
+import { DocTitle, Plate } from "@/components/doc-title";
 import { ExpiryBadge, STATUS_STYLES } from "@/components/expiry-badge";
 import { typeIcon } from "@/lib/doc-types";
 import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
+import { groupByPlate, stripPlate } from "@/lib/vehicles";
 import { createClient } from "@/lib/supabase/server";
 import { AddDocument } from "./add-document";
 import { Upload } from "./upload";
@@ -37,6 +38,14 @@ export default async function Dashboard() {
   const counts = { expired: 0, soon: 0, ok: 0, unknown: 0 } as Record<ExpiryStatus, number>;
   for (const i of items) counts[i.status]++;
 
+  // έγγραφα με την ίδια πινακίδα -> μία κάρτα οχήματος. Μπαίνει στην ενότητα του πιο επείγοντος εγγράφου της
+  const entries = groupByPlate(items).map((g) => {
+    const worst = [...g.items].sort(
+      (a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.days ?? Infinity) - (b.days ?? Infinity),
+    )[0];
+    return { ...g, status: worst.status, days: worst.days };
+  });
+
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-12">
       <div>
@@ -63,7 +72,9 @@ export default async function Dashboard() {
       {items.length === 0 && <p className="text-slate-500">{el.dashboard.empty}</p>}
 
       {ORDER.map((status) => {
-        const group = items.filter((i) => i.status === status);
+        const group = entries
+          .filter((e) => e.status === status)
+          .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
         if (group.length === 0) return null;
         return (
           <section key={status} className="flex flex-col gap-3">
@@ -72,36 +83,81 @@ export default async function Dashboard() {
               {el.dashboard.groups[status]} ({group.length})
             </h2>
             <ul className="flex flex-col gap-3">
-              {group.map((d) => (
-                <li key={d.id} className="card flex flex-wrap items-center gap-4 p-4 transition hover:shadow-md">
-                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${STATUS_STYLES[status].soft}`}>
-                    {typeIcon(d.type)}
-                  </span>
-                  <div className="min-w-0 flex-1 basis-48">
-                    <DocTitle title={d.title} identifier={d.identifier} />
-                    <p className="text-sm text-slate-500">
-                      {el.types[d.type as keyof typeof el.types]}
-                      {d.expires_on && ` · ${formatDate(d.expires_on)}`}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-3">
-                    <ExpiryBadge status={d.status} days={d.days} />
-                    {d.file_path && urlByPath.get(d.file_path) && (
-                      <a href={urlByPath.get(d.file_path)} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:underline">
-                        {el.upload.openFile}
-                      </a>
-                    )}
-                    <form action={deleteDocument}>
-                      <input type="hidden" name="id" value={d.id} />
-                      <button className="text-sm text-slate-400 transition hover:text-red-600">{el.dashboard.delete}</button>
-                    </form>
-                  </div>
-                </li>
-              ))}
+              {group.map((e) =>
+                e.plate ? (
+                  <li key={e.plate} className="card overflow-hidden transition hover:shadow-md">
+                    <div className="flex flex-wrap items-center gap-4 p-4">
+                      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${STATUS_STYLES[status].soft}`}>
+                        {vehicleIcon(e.items.map((d) => d.type))}
+                      </span>
+                      <div className="min-w-0 flex-1 basis-48">
+                        <Plate large>{e.plate}</Plate>
+                        <p className="mt-1 text-sm text-slate-500">{el.dashboard.documentsCount.replace("{n}", String(e.items.length))}</p>
+                      </div>
+                      <ExpiryBadge status={status} days={e.days} />
+                    </div>
+                    <ul className="divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60">
+                      {e.items.map((d) => (
+                        <li key={d.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                          <span className="w-6 shrink-0 text-center text-lg">{typeIcon(d.type)}</span>
+                          <div className="min-w-0 flex-1 basis-40">
+                            <p className="truncate text-sm font-semibold">{stripPlate(d.title, d.identifier)}</p>
+                            <p className="text-xs text-slate-500">
+                              {el.types[d.type as keyof typeof el.types]}
+                              {d.expires_on && ` · ${formatDate(d.expires_on)}`}
+                            </p>
+                          </div>
+                          <DocActions d={d} url={d.file_path ? urlByPath.get(d.file_path) : undefined} />
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ) : (
+                  e.items.map((d) => (
+                    <li key={d.id} className="card flex flex-wrap items-center gap-4 p-4 transition hover:shadow-md">
+                      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${STATUS_STYLES[status].soft}`}>
+                        {typeIcon(d.type)}
+                      </span>
+                      <div className="min-w-0 flex-1 basis-48">
+                        <DocTitle title={d.title} identifier={d.identifier} />
+                        <p className="text-sm text-slate-500">
+                          {el.types[d.type as keyof typeof el.types]}
+                          {d.expires_on && ` · ${formatDate(d.expires_on)}`}
+                        </p>
+                      </div>
+                      <DocActions d={d} url={d.file_path ? urlByPath.get(d.file_path) : undefined} />
+                    </li>
+                  ))
+                ),
+              )}
             </ul>
           </section>
         );
       })}
     </main>
+  );
+}
+
+// Εικονίδιο οχήματος για την ομάδα: μηχανή αν υπάρχει ασφάλεια μηχανής, αλλιώς αυτοκίνητο
+function vehicleIcon(types: string[]): string {
+  if (types.includes("motorcycle_insurance")) return typeIcon("motorcycle_insurance");
+  if (types.some((t) => ["car_insurance", "ktel_ktheo", "road_tax"].includes(t))) return typeIcon("car_insurance");
+  return typeIcon(types[0]);
+}
+
+function DocActions({ d, url }: { d: { id: string; status: ExpiryStatus; days: number | null }; url?: string }) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-3">
+      <ExpiryBadge status={d.status} days={d.days} />
+      {url && (
+        <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:underline">
+          {el.upload.openFile}
+        </a>
+      )}
+      <form action={deleteDocument}>
+        <input type="hidden" name="id" value={d.id} />
+        <button className="text-sm text-slate-400 transition hover:text-red-600">{el.dashboard.delete}</button>
+      </form>
+    </div>
   );
 }

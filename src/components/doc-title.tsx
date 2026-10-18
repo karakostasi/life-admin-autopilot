@@ -1,23 +1,24 @@
-const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+import { stripPlate } from "@/lib/vehicles";
 
 // Τίτλος εγγράφου με την πινακίδα (identifier) σε bold, ώστε να φαίνεται αμέσως για ποιο όχημα πρόκειται.
-// Αν η πινακίδα υπάρχει ήδη μέσα στον τίτλο ("ΚΤΕΟ ΖΧΑ-1234"), βγαίνει από εκεί για να μην εμφανίζεται δύο φορές.
 export function DocTitle({ title, identifier }: { title: string; identifier: string | null }) {
   const plate = identifier?.trim();
   if (!plate) return <p className="truncate font-semibold">{title}</p>;
 
-  // ανεκτικό σε διαφορές κενών/παύλας: "ΖΧΑ 1234" = "ΖΧΑ-1234"
-  const pattern = [...plate.replace(/[\s-]+/g, "")].map(escape).join("[\\s-]*");
-  const stripped = title
-    .replace(new RegExp(pattern, "i"), "")
-    .replace(/\s*[-–·:]\s*$/, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
   return (
     <p className="flex min-w-0 items-center gap-2">
-      <span className="truncate font-semibold">{stripped || title}</span>
-      <strong className="shrink-0 rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-extrabold tracking-wider text-slate-900">{plate}</strong>
+      <span className="truncate font-semibold">{stripPlate(title, plate)}</span>
+      <Plate>{plate}</Plate>
     </p>
+  );
+}
+
+export function Plate({ children, large }: { children: React.ReactNode; large?: boolean }) {
+  return (
+    <strong
+      className={`shrink-0 rounded-md border border-slate-300 bg-slate-100 font-extrabold tracking-wider text-slate-900 ${large ? "px-2.5 py-1 text-sm" : "px-2 py-0.5 text-xs"}`}
+    >
+      {children}
+    </strong>
   );
 }
