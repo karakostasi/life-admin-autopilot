@@ -52,7 +52,7 @@ export type ExtractResult =
 const PROVIDER = process.env.EXTRACTION_PROVIDER ?? "gemini";
 const MODELS = {
   anthropic: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5",
-  gemini: process.env.GEMINI_MODEL ?? "gemini-3.8-flash",
+  gemini: process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite",
 };
 
 const SYSTEM_PROMPT = `You extract structured data from personal admin documents for a Greek expiry-tracking app.
@@ -319,6 +319,6 @@ export async function extractDocument(input: ExtractInput): Promise<ExtractResul
     const name = err instanceof Error ? err.name : "unknown";
     const code = err instanceof Error && /^(missing_|gemini_http_)/.test(err.message) ? err.message : "";
     console.error("extractDocument failed:", name, code);
-    return { ok: false, error: "api_error" };
+    return { ok: false, error: code === "gemini_http_429" ? "rate_limited" : "api_error" };
   }
 }

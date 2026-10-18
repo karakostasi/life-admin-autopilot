@@ -5,6 +5,7 @@ import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../login/actions";
 import { AddDocument } from "./add-document";
+import { Upload } from "./upload";
 import { deleteDocument } from "./actions";
 
 const ORDER: ExpiryStatus[] = ["expired", "soon", "ok", "unknown"];
@@ -18,9 +19,15 @@ export default async function Dashboard() {
 
   const { data: docs } = await supabase
     .from("documents")
-    .select("id,type,title,provider,identifier,expires_on")
+    .select("id,type,title,provider,identifier,expires_on,file_path")
     .neq("status", "archived")
     .order("expires_on", { ascending: true, nullsFirst: false });
+
+  // signed URLs (5 λεπτά): το bucket είναι private
+  const paths = (docs ?? []).map((d) => d.file_path).filter((p): p is string => !!p);
+  const signed = paths.length ? (await supabase.storage.from("documents").createSignedUrls(paths, 300)).data : null;
+  const urlByPath = new Map<string, string>();
+  for (const s of signed ?? []) if (s.path && s.signedUrl) urlByPath.set(s.path, s.signedUrl);
 
   const now = new Date();
   const items = (docs ?? []).map((d) => ({ ...d, ...expiryInfo(d.expires_on, now) }));
@@ -36,6 +43,8 @@ export default async function Dashboard() {
           <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">{el.dashboard.signOut}</button>
         </form>
       </div>
+
+      <Upload />
 
       <AddDocument />
 
@@ -64,6 +73,11 @@ export default async function Dashboard() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <ExpiryBadge status={d.status} days={d.days} />
+                    {d.file_path && urlByPath.get(d.file_path) && (
+                      <a href={urlByPath.get(d.file_path)} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline">
+                        {el.upload.openFile}
+                      </a>
+                    )}
                     <form action={deleteDocument}>
                       <input type="hidden" name="id" value={d.id} />
                       <button className="text-sm text-slate-400 hover:text-red-600">{el.dashboard.delete}</button>
