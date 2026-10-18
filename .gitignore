@@ -51,3 +51,7 @@ fixtures/**/*.raw.*
 
 # claude code local settings
 .claude/settings.local.json
+
+# fixtures: anonymized samples stay local, only the folder is tracked
+fixtures/*
+!fixtures/.gitkeep
