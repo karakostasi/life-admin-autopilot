@@ -95,7 +95,7 @@ export default async function Home() {
               )}
             </div>
           ) : (
-            <div className="card p-6 shadow-xl shadow-slate-200/60 md:rotate-1">
+            <div className="card p-6 shadow-xl shadow-slate-200/60">
               <div className="mb-4 flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
