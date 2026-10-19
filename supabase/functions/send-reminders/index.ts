@@ -35,7 +35,7 @@ function buildEmail(title: string, type: string, expiresOn: string, days: number
   <h2 style="margin:0 0 8px">${esc(title)}</h2>
   <p style="margin:0 0 16px;color:#475569">${esc(TYPE_LABELS[type] ?? "Έγγραφο")} · ${when} (${formatDate(expiresOn)})</p>
   <a href="${esc(siteUrl)}/dashboard" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Δες τι λήγει</a>
-  <p style="margin-top:24px;font-size:12px;color:#94a3b8">Life Admin Autopilot</p>
+  <p style="margin-top:24px;font-size:12px;color:#94a3b8">Θύμισέ μου</p>
 </div>`;
   return { subject, html };
 }
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) return new Response("missing RESEND_API_KEY", { status: 500 });
-  const from = Deno.env.get("RESEND_FROM") ?? "Life Admin Autopilot <onboarding@resend.dev>";
+  const from = Deno.env.get("RESEND_FROM") ?? "Θύμισέ μου <onboarding@resend.dev>";
   const siteUrl = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
 
   // web push (προαιρετικό: αν λείπουν τα VAPID keys, στέλνουμε μόνο email)

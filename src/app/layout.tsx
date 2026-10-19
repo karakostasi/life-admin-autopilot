@@ -9,8 +9,8 @@ const inter = Inter({ subsets: ["latin", "greek"], variable: "--font-inter", dis
 export const metadata: Metadata = {
   title: el.meta.title,
   description: el.meta.description,
-  applicationName: "Life Admin Autopilot",
-  appleWebApp: { capable: true, title: "Autopilot", statusBarStyle: "default" },
+  applicationName: "Θύμισέ μου",
+  appleWebApp: { capable: true, title: "Θύμισέ μου", statusBarStyle: "default" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 

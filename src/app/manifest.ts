@@ -3,8 +3,8 @@ import el from "@/messages/el.json";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Life Admin Autopilot",
-    short_name: "Autopilot",
+    name: "Θύμισέ μου",
+    short_name: "Θύμισέ μου",
     description: el.meta.description,
     lang: "el",
     start_url: "/dashboard",

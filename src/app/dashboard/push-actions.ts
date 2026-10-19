@@ -52,7 +52,7 @@ export async function sendTestPush(): Promise<{ sent: number; failed: number }> 
     try {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-        JSON.stringify({ title: "Life Admin Autopilot", body: "Οι ειδοποιήσεις δουλεύουν ✓", url: "/dashboard", tag: `test-${Date.now()}` }),
+        JSON.stringify({ title: "Θύμισέ μου", body: "Οι ειδοποιήσεις δουλεύουν ✓", url: "/dashboard", tag: `test-${Date.now()}` }),
         { TTL: 60 },
       );
       sent++;

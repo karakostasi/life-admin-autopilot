@@ -1,4 +1,4 @@
--- Life Admin Autopilot: MVP schema (Supabase / Postgres)
+-- Θύμισέ μου: MVP schema (Supabase / Postgres)
 -- Εφάρμοσέ το σε Supabase project με region EU.
 
 create extension if not exists "pgcrypto";

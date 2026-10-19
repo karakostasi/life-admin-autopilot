@@ -22,7 +22,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">✓</span>
-          <span className="hidden sm:inline">Life Admin Autopilot</span>
+          <span className="hidden sm:inline">Θύμισέ μου</span>
         </Link>
 
         {user ? (
