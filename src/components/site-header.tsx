@@ -22,15 +22,15 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">✓</span>
-          Life Admin Autopilot
+          <span className="hidden sm:inline">Life Admin Autopilot</span>
         </Link>
 
         {user ? (
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="btn-secondary hidden !px-4 !py-2 sm:inline-flex">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/dashboard" className="btn-secondary !px-3 !py-2 !text-xs sm:!px-4 sm:!text-sm">
               {el.header.dashboard}
             </Link>
-            <Link href="/dashboard/subscriptions" className="btn-secondary hidden !px-4 !py-2 sm:inline-flex">
+            <Link href="/dashboard/subscriptions" className="btn-secondary !px-3 !py-2 !text-xs sm:!px-4 sm:!text-sm">
               {el.subscriptions.link}
             </Link>
             <UserMenu initials={initials(user.user_metadata?.full_name, user.email)} email={user.email ?? ""} />
