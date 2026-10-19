@@ -39,10 +39,13 @@ export function Notifications() {
     startTransition(async () => {
       try {
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!publicKey) return setMessage(el.notifications.error);
+        if (!publicKey) return setMessage(`${el.notifications.error} (λείπει το VAPID key)`);
+        // iOS: η άδεια πρέπει να ζητηθεί αμέσως μέσα στο κλικ, πριν από οποιοδήποτε await
+        const permission = await Notification.requestPermission();
+        if (permission === "denied") return setState("denied");
+        if (permission !== "granted") return;
         const reg = await navigator.serviceWorker.register("/sw.js");
         await navigator.serviceWorker.ready;
-        if ((await Notification.requestPermission()) !== "granted") return setState("denied");
         const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
         const res = await savePushSubscription(sub.toJSON());
         if (!res.ok) {
@@ -50,8 +53,9 @@ export function Notifications() {
           return setMessage(el.notifications.error);
         }
         setState("on");
-      } catch {
-        setMessage(el.notifications.error);
+      } catch (err) {
+        // τεχνική αιτία (όνομα σφάλματος του browser): ασφαλές να εμφανιστεί και βοηθά στο debugging
+        setMessage(`${el.notifications.error} (${err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 120) : "άγνωστο σφάλμα"})`);
       }
     });
   }
