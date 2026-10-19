@@ -1,7 +1,8 @@
 // Edge Function (Deno): στέλνει τις υπενθυμίσεις που έχουν έρθει. Καλείται καθημερινά από pg_cron.
-// Secrets: REMINDER_CRON_SECRET, RESEND_API_KEY, RESEND_FROM, SITE_URL
+// Secrets: REMINDER_CRON_SECRET, RESEND_API_KEY, RESEND_FROM, SITE_URL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 // (SUPABASE_URL και SUPABASE_SERVICE_ROLE_KEY δίνονται αυτόματα από το Supabase).
 import { createClient } from "npm:@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const TYPE_LABELS: Record<string, string> = {
   car_insurance: "Ασφάλεια αυτοκινήτου",
@@ -50,6 +51,12 @@ Deno.serve(async (req) => {
   const from = Deno.env.get("RESEND_FROM") ?? "Life Admin Autopilot <onboarding@resend.dev>";
   const siteUrl = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
 
+  // web push (προαιρετικό: αν λείπουν τα VAPID keys, στέλνουμε μόνο email)
+  const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
+  const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY");
+  const pushEnabled = !!vapidPublic && !!vapidPrivate;
+  if (pushEnabled) webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") ?? siteUrl, vapidPublic!, vapidPrivate!);
+
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const today = todayInAthens();
 
@@ -68,6 +75,7 @@ Deno.serve(async (req) => {
   let sent = 0;
   let failed = 0;
   const emailCache = new Map<string, string | null>();
+  const subsCache = new Map<string, { id: string; endpoint: string; p256dh: string; auth: string }[]>();
 
   for (const r of due ?? []) {
     const doc = r.documents as unknown as { title: string; type: string; expires_on: string | null; status: string };
@@ -81,21 +89,45 @@ Deno.serve(async (req) => {
       emailCache.set(r.user_id, data.user?.email ?? null);
     }
     const to = emailCache.get(r.user_id);
-    if (!to) continue;
+    let delivered = false;
 
-    const { subject, html } = buildEmail(doc.title, doc.type, doc.expires_on, days, siteUrl);
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to, subject, html }),
-    });
+    if (to) {
+      const { subject, html } = buildEmail(doc.title, doc.type, doc.expires_on, days, siteUrl);
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from, to, subject, html }),
+      });
+      if (res.ok) delivered = true;
+      else {
+        failed++;
+        console.error("resend failed:", res.status); // όχι email ή περιεχόμενο στα logs
+      }
+    }
 
-    if (res.ok) {
+    if (pushEnabled) {
+      if (!subsCache.has(r.user_id)) {
+        const { data } = await supabase.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id", r.user_id);
+        subsCache.set(r.user_id, data ?? []);
+      }
+      const when = days <= 0 ? "λήγει σήμερα" : `λήγει σε ${plural(days)}`;
+      const payload = JSON.stringify({ title: doc.title, body: `${TYPE_LABELS[doc.type] ?? "Έγγραφο"} · ${when} (${formatDate(doc.expires_on)})`, url: "/dashboard", tag: r.id });
+      for (const s of subsCache.get(r.user_id) ?? []) {
+        try {
+          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86_400 });
+          delivered = true;
+        } catch (err) {
+          const status = (err as { statusCode?: number }).statusCode;
+          console.error("push failed:", status);
+          // η συσκευή δεν δέχεται πια ειδοποιήσεις: καθάρισέ την
+          if (status === 404 || status === 410) await supabase.from("push_subscriptions").delete().eq("id", s.id);
+        }
+      }
+    }
+
+    if (delivered) {
       await supabase.from("reminders").update({ sent_at: new Date().toISOString() }).eq("id", r.id);
       sent++;
-    } else {
-      failed++;
-      console.error("resend failed:", res.status); // όχι email ή περιεχόμενο στα logs
     }
   }
 

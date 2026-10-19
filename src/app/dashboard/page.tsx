@@ -8,6 +8,7 @@ import { expiryInfo, formatDate, type ExpiryStatus } from "@/lib/expiry";
 import { groupByVehicle, stripPlate, type Vehicle } from "@/lib/vehicles";
 import { createClient } from "@/lib/supabase/server";
 import { AddDocument } from "./add-document";
+import { Notifications } from "./notifications";
 import { Upload } from "./upload";
 import { deleteDocument, setVehicleKind } from "./actions";
 
@@ -67,6 +68,8 @@ export default async function Dashboard() {
           </div>
         ))}
       </div>
+
+      <Notifications />
 
       <Upload vehicles={vehicles} />
 
