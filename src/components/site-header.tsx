@@ -21,7 +21,8 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-100/85 shadow-sm shadow-slate-300/30 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">✓</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/icon-192.png?v=2" alt="" className="h-8 w-8 rounded-xl shadow-sm" />
           <span className="hidden sm:inline">Θύμισέ μου</span>
         </Link>
 

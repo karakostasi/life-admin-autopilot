@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: el.meta.description,
   applicationName: "Θύμισέ μου",
   appleWebApp: { capable: true, title: "Θύμισέ μου", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: [{ url: "/icons/icon.svg?v=2", type: "image/svg+xml" }, { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png?v=2" },
 };
 
 export const viewport: Viewport = { themeColor: "#4f46e5" };
