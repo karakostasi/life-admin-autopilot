@@ -14,6 +14,9 @@ import { deleteDocument, setVehicleKind } from "./actions";
 
 const ORDER: ExpiryStatus[] = ["expired", "soon", "ok", "unknown"];
 
+// οι server actions (upload, AI) τρέχουν με το όριο της σελίδας: τα AI calls έχουν timeout 60-90s
+export const maxDuration = 60;
+
 export default async function Dashboard() {
   const supabase = await createClient();
   const {

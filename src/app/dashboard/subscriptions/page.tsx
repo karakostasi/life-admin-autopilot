@@ -10,6 +10,9 @@ import { StatementUpload } from "./statement-upload";
 
 const money = (n: number) => `${n.toFixed(2).replace(".", ",")} €`;
 
+// οι server actions (upload, AI) τρέχουν με το όριο της σελίδας: τα AI calls έχουν timeout 60-90s
+export const maxDuration = 60;
+
 export default async function Subscriptions() {
   const supabase = await createClient();
   const {
